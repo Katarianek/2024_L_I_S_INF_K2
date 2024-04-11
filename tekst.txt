@@ -1,0 +1,97 @@
+ 15 changes: 15 additions & 0 deletions15  
+.circleci/config.yml
+@@ -0,0 +1,15 @@
+version: 2.1
+jobs:
+  build-and-test:
+    machine:
+      image: ubuntu-2204:2024.01.2
+    steps:
+      - checkout
+      - run: make deps
+      - run: make lint
+      - run: make test
+      - run: make docker_build
+workflows:
+  basic:
+    jobs:
+      - build-and-test
+ 14 changes: 14 additions & 0 deletions14  
+Dockerfile
+@@ -0,0 +1,14 @@
+FROM python:3
+
+ARG APP_DIR=/usr/src/hello_world_printer
+
+WORKDIR /tmp
+ADD requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt
+
+RUN mkdir -p $APP_DIR
+ADD hello_world/ $APP_DIR/hello_world/
+ADD main.py $APP_DIR
+
+CMD PYTHONPATH=$PYTHONPATH:/usr/src/hello_world_printer \
+      FLASK_APP=hello_world flask run --host=0.0.0.0
+ 12 changes: 12 additions & 0 deletions12  
+Makefile
+@@ -0,0 +1,12 @@
+run:
+	python main.py
+.PHONY:test
+test:
+	PYTHONPATH=. py.test --verbose -s
+deps:
+	pip install -r requirements.txt; \
+	pip install -r test_requirements.txt
+lint:
+	flake8 hello_world test
+docker_build:
+	docker build -t hello-world-printer .
+  2 changes: 1 addition & 1 deletion2  
+README.md
+@@ -10,7 +10,7 @@ o Continuous Integration, Continuous Delivery i Continuous Deployment.
+  $ python -m venv .venv
+  # aktywowanie hermetycznego środowiska
+  $ source .venv/Source/activate
+  $ source .venv/Scripts/activate
+  $ pip install -r requirements.txt
+  $ pip install -r test_requirements.txt
+ 2 changes: 1 addition & 1 deletion2  
+hello_world/__init__.py
+@@ -1,4 +1,4 @@
+from flask import Flask
+app = Flask(__name__)
+
+import hello_world.views
+import hello_world.views # noqa
+  4 changes: 3 additions & 1 deletion4  
+hello_world/views.py
+@@ -3,9 +3,10 @@
+from hello_world.formater import SUPPORTED, PLAIN
+from flask import request
+
+moje_imie = "Natalia"
+moje_imie = "Aleks"
+msg = "Hello World!"
+
+
+@app.route('/')
+def index():
+    output = request.args.get('output')
+@@ -14,6 +15,7 @@ def index():
+    return get_formatted(msg, moje_imie,
+                         output.lower())
+
+
+@app.route('/outputs')
+def supported_output():
+    return ", ".join(SUPPORTED)
+  2 changes: 1 addition & 1 deletion2  
+test/test_views.py
+@@ -15,4 +15,4 @@ def test_outputs(self):
+
+    def test_msg_with_output(self):
+        rv = self.app.get('/?output=json')
+        self.assertEqual(b'{ "imie":"Natalia", "mgs":Hello World!"}', rv.data)
+        self.assertEqual(b'{ "imie":"Aleks", "mgs":Hello World!"}', rv.data)
